@@ -24,6 +24,7 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class HotelController {
     private final HotelService hotelService;
+    //PHAM VAN THANH
     @PostMapping
     public ResponseEntity<HotelResponse> createHotel(@RequestParam("photo") MultipartFile photo,
                                                      @RequestParam("name") String name,
