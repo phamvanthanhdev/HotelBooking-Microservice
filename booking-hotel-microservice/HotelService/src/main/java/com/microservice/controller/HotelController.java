@@ -1,5 +1,6 @@
 package com.microservice.controller;
 
+import com.microservice.dto.HotelDetailResponse;
 import com.microservice.dto.HotelResponse;
 import com.microservice.model.Hotel;
 import com.microservice.service.HotelService;
@@ -59,11 +60,17 @@ public class HotelController {
                                                 throws SQLException {
         try {
             Hotel hotel = hotelService.getHotelByHotelId(hotelId);
-            HotelResponse hotelResponse = convertHotelToResponse(hotel);
-            return ResponseEntity.ok(hotelResponse);
+            HotelDetailResponse hotelDetail = convertHotelToDetail(hotel);
+            return ResponseEntity.ok(hotelDetail);
         }catch (RuntimeException ex){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
         }
+    }
+
+    @GetMapping("/get/locations")
+    public ResponseEntity<List<String>> getAllCities(){
+        List<String> cities = hotelService.getAllCities();
+        return ResponseEntity.ok(cities);
     }
 
     /*@DeleteMapping("/delete/room/{roomId}")
@@ -110,5 +117,26 @@ public class HotelController {
                 hotel.getRating(),
                 hotel.getPrice()
                 , photoBytes);
+    }
+
+    //Convert Hotel to HotelResponse return Frontend
+    private HotelDetailResponse convertHotelToDetail(Hotel hotel) throws SQLException {
+        byte[] photoBytes = null;
+        Blob photoBlob = hotel.getPhoto();
+        if(photoBlob!=null){
+            try {
+                photoBytes = photoBlob.getBytes(1, (int)photoBlob.length());
+            }catch (SQLException e){
+                throw new SQLException("Error retrieving photo");
+            }
+        }
+        return new HotelDetailResponse(hotel.getId(),
+                hotel.getName(),
+                hotel.getAddress(),
+                hotel.getCity(),
+                hotel.getRating(),
+                hotel.getPrice(),
+                hotel.getDescription(),
+                photoBytes);
     }
 }

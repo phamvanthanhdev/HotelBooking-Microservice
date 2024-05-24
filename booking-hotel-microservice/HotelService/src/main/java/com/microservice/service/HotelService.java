@@ -83,4 +83,9 @@ public class HotelService {
         }
         return hotelRepository.findById(hotelId).get();
     }
+
+    public List<String> getAllCities() {
+        List<String> citiesDistinct = hotelRepository.findDistinctCities();
+        return citiesDistinct;
+    }
 }
