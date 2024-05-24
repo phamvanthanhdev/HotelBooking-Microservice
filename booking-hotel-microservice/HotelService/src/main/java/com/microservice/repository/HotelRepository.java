@@ -9,4 +9,6 @@ import java.util.List;
 public interface HotelRepository extends JpaRepository<Hotel, Long> {
     @Query("SELECT DISTINCT h.city FROM Hotel h")
     List<String> findDistinctCities();
+
+    List<Hotel> findByCity(String city);
 }

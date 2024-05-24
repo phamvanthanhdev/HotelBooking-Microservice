@@ -88,4 +88,8 @@ public class HotelService {
         List<String> citiesDistinct = hotelRepository.findDistinctCities();
         return citiesDistinct;
     }
+
+    public List<Hotel> getHotelsByCity(String city) {
+        return hotelRepository.findByCity(city);
+    }
 }

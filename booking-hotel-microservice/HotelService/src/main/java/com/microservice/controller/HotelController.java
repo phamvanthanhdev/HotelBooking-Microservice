@@ -18,6 +18,7 @@ import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/hotel")
@@ -73,6 +74,14 @@ public class HotelController {
         return ResponseEntity.ok(cities);
     }
 
+    @GetMapping("/city/{cityName}")
+    public ResponseEntity<List<HotelResponse>> getHotelsByCity(@PathVariable String cityName) {
+        List<Hotel> hotels = hotelService.getHotelsByCity(cityName);
+        List<HotelResponse> hotelResponses = hotels.stream()
+                .map(hotel -> convertHotelToResponse(hotel))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(hotelResponses);
+    }
     /*@DeleteMapping("/delete/room/{roomId}")
     public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId){
         roomService.deleteRoom(roomId);
@@ -100,15 +109,17 @@ public class HotelController {
 
 
     //Convert Hotel to HotelResponse return Frontend
-    private HotelResponse convertHotelToResponse(Hotel hotel) throws SQLException {
+    private HotelResponse convertHotelToResponse(Hotel hotel) {
         byte[] photoBytes = null;
         Blob photoBlob = hotel.getPhoto();
-        if(photoBlob!=null){
-            try {
-                photoBytes = photoBlob.getBytes(1, (int)photoBlob.length());
-            }catch (SQLException e){
-                throw new SQLException("Error retrieving photo");
+        try {
+            if(photoBlob != null) {
+                photoBytes = photoBlob.getBytes(1, (int) photoBlob.length());
             }
+        } catch (SQLException e) {
+            System.err.println("Error retrieving photo: " + e.getMessage());
+            // Trả về một giá trị mặc định hoặc thông báo lỗi trong trường hợp xảy ra lỗi
+            // Ví dụ: Trả về một ảnh mặc định hoặc làm gì đó thích hợp với ứng dụng của bạn
         }
         return new HotelResponse(hotel.getId(),
                 hotel.getName(),
