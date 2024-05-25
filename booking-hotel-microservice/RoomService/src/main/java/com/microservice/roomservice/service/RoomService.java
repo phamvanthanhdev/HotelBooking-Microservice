@@ -19,13 +19,12 @@ import java.util.Optional;
 public class RoomService {
     private final RoomRepository roomRepository;
 
-    public Room createRoom(
-            MultipartFile file,
-            String roomType,
-            BigDecimal roomPrice) throws IOException, SQLException {
+    public Room createRoom(MultipartFile file, String roomType,
+                            BigDecimal roomPrice, Long hotelId) throws IOException, SQLException {
         Room room = new Room();
         room.setRoomType(roomType);
         room.setRoomPrice(roomPrice);
+        room.setHotelId(hotelId);
         if(!file.isEmpty()){
             byte[] photoBytes = file.getBytes();
             Blob photoBlod = new SerialBlob(photoBytes);
@@ -76,5 +75,13 @@ public class RoomService {
             }
         }
         return roomRepository.save(room);
+    }
+
+    public List<Room> getRoomsByHotelId(Long hotelId) {
+        return roomRepository.findAllByHotelId(hotelId);
+    }
+
+    public Room getRoomById(Long roomId) {
+        return roomRepository.findById(roomId).get();
     }
 }

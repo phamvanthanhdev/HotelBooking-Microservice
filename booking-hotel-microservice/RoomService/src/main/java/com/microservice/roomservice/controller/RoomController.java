@@ -27,8 +27,9 @@ public class RoomController {
     @PostMapping("/add/new-room")
     public ResponseEntity<RoomResponse> createRoom(@RequestParam("photo") MultipartFile photo,
                                                    @RequestParam("roomType") String roomType,
-                                                   @RequestParam("roomPrice") BigDecimal roomPrice) throws IOException, SQLException {
-        Room savedRoom = roomService.createRoom(photo, roomType, roomPrice);
+                                                   @RequestParam("roomPrice") BigDecimal roomPrice,
+                                                   @RequestParam("hotelId") Long hotelId) throws IOException, SQLException {
+        Room savedRoom = roomService.createRoom(photo, roomType, roomPrice, hotelId);
 
         RoomResponse response = new RoomResponse(savedRoom.getId(),
                 savedRoom.getRoomType(), savedRoom.getRoomPrice());
@@ -58,6 +59,16 @@ public class RoomController {
         return ResponseEntity.ok(roomResponses);
     }
 
+    @GetMapping("/get-rooms-hotel/{hotelId}")
+    public ResponseEntity<List<RoomResponse>> getRoomsByHotelId(@PathVariable("hotelId") Long hotelId) throws SQLException {
+        List<Room> roomList = roomService.getRoomsByHotelId(hotelId);
+        List<RoomResponse> roomResponses = new ArrayList<>();
+        for (Room room:roomList) {
+            roomResponses.add(getRoomRespone(room));
+        }
+        return ResponseEntity.ok(roomResponses);
+    }
+
     @DeleteMapping("/delete/room/{roomId}")
     public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId){
         roomService.deleteRoom(roomId);
@@ -82,6 +93,13 @@ public class RoomController {
         return ResponseEntity.ok(roomResponse);
     }
 
+    @GetMapping("/get/{roomId}")
+    public ResponseEntity<RoomResponse> getRoomById(@PathVariable Long roomId) throws SQLException {
+        Room room = roomService.getRoomById(roomId);
+        RoomResponse response = getRoomRespone(room);
+        return ResponseEntity.ok(response);
+    }
+
 
 
     //Convert Room to RoomResponse return Frontend
@@ -98,6 +116,7 @@ public class RoomController {
         return new RoomResponse(room.getId(),
                 room.getRoomType(),
                 room.getRoomPrice(),
-                room.isBooked(), photoBytes);
+                room.isBooked(), photoBytes,
+                room.getHotelId());
     }
 }

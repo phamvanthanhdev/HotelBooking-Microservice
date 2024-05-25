@@ -22,4 +22,5 @@ public class Room {
     private boolean isBooked = false;
     @Lob
     private Blob photo;
+    private Long hotelId;
 }
