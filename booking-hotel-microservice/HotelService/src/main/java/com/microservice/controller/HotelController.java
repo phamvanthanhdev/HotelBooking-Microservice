@@ -74,14 +74,29 @@ public class HotelController {
         return ResponseEntity.ok(cities);
     }
 
+//    @GetMapping("/city/{cityName}")
+//    public ResponseEntity<List<HotelResponse>> getHotelsByCity(@PathVariable String cityName) {
+//        List<Hotel> hotels = hotelService.getHotelsByCity(cityName);
+//        List<HotelResponse> hotelResponses = hotels.stream()
+//                .map(hotel -> convertHotelToResponse(hotel))
+//                .collect(Collectors.toList());
+//        return ResponseEntity.ok(hotelResponses);
+//    }
     @GetMapping("/city/{cityName}")
-    public ResponseEntity<List<HotelResponse>> getHotelsByCity(@PathVariable String cityName) {
+    public ResponseEntity<List<HotelDetailResponse>> getHotelsByCity(@PathVariable String cityName) {
         List<Hotel> hotels = hotelService.getHotelsByCity(cityName);
-        List<HotelResponse> hotelResponses = hotels.stream()
-                .map(hotel -> convertHotelToResponse(hotel))
+        List<HotelDetailResponse> hotelDetailsResponses = hotels.stream()
+                .map(hotel -> {
+                    try {
+                        return convertHotelToDetail(hotel);
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(hotelResponses);
-    }
+        return ResponseEntity.ok(hotelDetailsResponses);
+}
+
     /*@DeleteMapping("/delete/room/{roomId}")
     public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId){
         roomService.deleteRoom(roomId);
@@ -134,12 +149,14 @@ public class HotelController {
     private HotelDetailResponse convertHotelToDetail(Hotel hotel) throws SQLException {
         byte[] photoBytes = null;
         Blob photoBlob = hotel.getPhoto();
-        if(photoBlob!=null){
-            try {
-                photoBytes = photoBlob.getBytes(1, (int)photoBlob.length());
-            }catch (SQLException e){
-                throw new SQLException("Error retrieving photo");
+        try {
+            if(photoBlob != null) {
+                photoBytes = photoBlob.getBytes(1, (int) photoBlob.length());
             }
+        } catch (SQLException e) {
+            System.err.println("Error retrieving photo: " + e.getMessage());
+            // Trả về một giá trị mặc định hoặc thông báo lỗi trong trường hợp xảy ra lỗi
+            // Ví dụ: Trả về một ảnh mặc định hoặc làm gì đó thích hợp với ứng dụng của bạn
         }
         return new HotelDetailResponse(hotel.getId(),
                 hotel.getName(),
