@@ -84,4 +84,14 @@ public class RoomService {
     public Room getRoomById(Long roomId) {
         return roomRepository.findById(roomId).get();
     }
+
+    // Phương thức để lấy các loại phòng theo hotelId
+    public List<String> getRoomTypesByHotelId(Long hotelId) {
+        return roomRepository.findDistinctRoomTypesByHotelId(hotelId);
+    }
+
+    // phương thức đẻ lấy danh sách phòng thep loại phòng và id hotel
+    public List<Room> getRoomsByHotelIdAndTypeRoom(Long hotelId,String roomType) {
+        return roomRepository.findByRoomTypeAndHotelId(hotelId,roomType);
+    }
 }

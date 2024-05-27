@@ -31,8 +31,7 @@ public class RoomController {
                                                    @RequestParam("hotelId") Long hotelId) throws IOException, SQLException {
         Room savedRoom = roomService.createRoom(photo, roomType, roomPrice, hotelId);
 
-        RoomResponse response = new RoomResponse(savedRoom.getId(),
-                savedRoom.getRoomType(), savedRoom.getRoomPrice());
+        RoomResponse response = getRoomRespone(savedRoom);
 
         return ResponseEntity.ok(response);
     }
@@ -100,7 +99,20 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/types/{hotelId}")
+    public List<String> getRoomTypesByHotelId(@PathVariable Long hotelId) {
+        return roomService.getRoomTypesByHotelId(hotelId);
+    }
 
+    @GetMapping("/rooms-by-hotel-and-type/{hotelId}/{typeRoom}")
+    public ResponseEntity<List<RoomResponse>> getRoomsByHotelIdAndType(@PathVariable Long hotelId, @PathVariable String typeRoom) throws SQLException{
+        List<Room> roomList = roomService.getRoomsByHotelIdAndTypeRoom(hotelId, typeRoom);
+        List<RoomResponse> roomResponses = new ArrayList<>();
+        for (Room room:roomList) {
+            roomResponses.add(getRoomRespone(room));
+        }
+        return ResponseEntity.ok(roomResponses);
+    }
 
     //Convert Room to RoomResponse return Frontend
     private RoomResponse getRoomRespone(Room room) throws SQLException {
