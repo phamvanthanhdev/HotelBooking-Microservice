@@ -21,6 +21,7 @@ public class Hotel {
     private String address;
     private String city;
     @Lob
+    @Column(length = 10000)
     private String description;
     private double rating;
     private BigDecimal price;

@@ -1,5 +1,6 @@
 package com.microservice.bookingservice.service;
 
+import com.microservice.bookingservice.BookingExeption;
 import com.microservice.bookingservice.dto.InventoryResponse;
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.repository.BookingRepository;
@@ -9,17 +10,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class BookingService {
     private final BookingRepository bookingRepository;
     private final WebClient.Builder webClientBuilder;
-    public String saveBooking(Long roomId, BookedRoom bookingRequest) {
+    public String saveBooking(BookedRoom bookingRequest) {
         if(bookingRequest.getCheckOutDate().isBefore(bookingRequest.getCheckInDate())){
-            throw  new RuntimeException("Check-in date must come before check-out date");
+            throw  new BookingExeption("Check-in date must come before check-out date");
         }
-
+        Long roomId = bookingRequest.getRoomId();
         //Call Inventory Server, and booking room success if room is available
         InventoryResponse inventoryRespone = webClientBuilder.build() .get()
                 .uri("http://inventory-service/api/inventory",
@@ -42,5 +45,9 @@ public class BookingService {
             //return "Room is not available, please try again later";
         }
 
+    }
+
+    public List<BookedRoom> getBookedRoomsByGuestEmail(String guestEmail) {
+        return bookingRepository.getBookedRoomsByGuestEmailDESC(guestEmail);
     }
 }

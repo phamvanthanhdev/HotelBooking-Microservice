@@ -17,9 +17,9 @@ public class InventoryService {
     @Transactional(readOnly = true)
     @SneakyThrows
     public InventoryResponse isAvailable(Long roomId) {
-        log.info("Wait Started");
-        Thread.sleep(10000);
-        log.info("Wait Ended");
+//        log.info("Wait Started");
+//        Thread.sleep(10000);
+//        log.info("Wait Ended");
         Inventory inventory = inventoryRepository.findByRoomId(roomId);
          return  InventoryResponse.builder()
                 .roomId(inventory.getRoomId())
