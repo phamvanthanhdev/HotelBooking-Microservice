@@ -19,4 +19,6 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     // Tìm các phòng theo hotelId và RoomType
     @Query("SELECT r FROM Room r WHERE r.hotelId = :hotelId AND r.roomType = :roomType")
     List<Room> findByRoomTypeAndHotelId(Long hotelId,String roomType);
+
+    //sine
 }
