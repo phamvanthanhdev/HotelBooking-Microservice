@@ -41,10 +41,14 @@ public class BookedRoom {
     private String bookingConfirmationCode;
     @Column(name = "room_Id")
     private Long roomId;
+    @Column(name = "hotel_Id")
+    private Long hotelId;
+    @Column(name = "booking_Status")
+    private String bookingStatus;
 
     public BookedRoom(LocalDate checkInDate, LocalDate checkOutDate, String guestFullName,
                       String guestEmail, int numOfAdults, int numOfChildren,
-                      int totalNumOfGuest, String note, BigDecimal totalPrice, Long roomId) {
+                      int totalNumOfGuest, String note, BigDecimal totalPrice, Long roomId, Long hotelId) {
         this.checkInDate = checkInDate;
         this.checkOutDate = checkOutDate;
         this.guestFullName = guestFullName;
@@ -55,6 +59,8 @@ public class BookedRoom {
         this.note = note;
         this.totalPrice = totalPrice;
         this.roomId = roomId;
+        this.hotelId = hotelId;
+        this.bookingStatus = "Chưa thanh toán";
     }
 
     public void calculateTotalNumberOfGuest(){

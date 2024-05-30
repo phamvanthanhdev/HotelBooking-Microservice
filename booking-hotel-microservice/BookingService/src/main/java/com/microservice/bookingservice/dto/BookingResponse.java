@@ -23,4 +23,6 @@ public class BookingResponse {
     private BigDecimal totalPrice;
     private String bookingConfirmationCode;
     private Long roomId;
+    private Long hotelId;
+    private String bookingStatus;
 }

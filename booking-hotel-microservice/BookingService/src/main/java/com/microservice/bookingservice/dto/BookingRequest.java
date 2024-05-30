@@ -19,4 +19,5 @@ public class BookingRequest {
     private String note;
     private BigDecimal totalPrice;
     private Long roomId;
+    private Long hotelId;
 }

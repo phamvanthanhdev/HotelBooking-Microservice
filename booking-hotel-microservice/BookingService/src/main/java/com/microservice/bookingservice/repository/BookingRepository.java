@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<BookedRoom, Long> {
-    @Query("SELECT b FROM BookedRoom b WHERE b.guestEmail = :email ORDER BY b.checkInDate DESC")
+    @Query("SELECT b FROM BookedRoom b WHERE b.guestEmail = :email ORDER BY b.bookingId DESC")
     List<BookedRoom> getBookedRoomsByGuestEmailDESC(String email);
 }

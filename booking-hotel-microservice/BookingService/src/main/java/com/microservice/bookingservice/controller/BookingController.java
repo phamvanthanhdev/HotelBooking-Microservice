@@ -9,6 +9,7 @@ import com.microservice.bookingservice.service.BookingService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
+import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +36,8 @@ public class BookingController {
         if(bookingRequest.getCheckInDate() == null || bookingRequest.getCheckOutDate() == null
                 || bookingRequest.getGuestFullName() == null || bookingRequest.getGuestEmail() == null
                 || bookingRequest.getNumOfAdults() <= 0 || bookingRequest.getNumOfChildren() < 0
-                || bookingRequest.getTotalPrice() == null ||  bookingRequest.getRoomId() == null){
+                || bookingRequest.getTotalPrice() == null ||  bookingRequest.getRoomId() == null
+                || bookingRequest.getHotelId() == null){
             return ResponseEntity.ok().body(new MessageBooking(400, "Dữ liệu đặt phòng chưa chính xác, vui lòng thử lại!"));
             //return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -58,12 +60,22 @@ public class BookingController {
         return ResponseEntity.ok(new MessageBooking(503, "Sever bị ngắt kết nối hoặc quá tải, vui lòng thử lại sau!"));
     }
 
-    //Lấy lịch sử đặt phòng theo email
+    //Lấy danh sách đặt phòng theo email
     @GetMapping("/get-by-email")
     public ResponseEntity<List<BookingResponse>> getBookedRoomsByEmail(@RequestParam("guestEmail") String guestEmail){
         List<BookedRoom> bookedRooms = bookingService.getBookedRoomsByGuestEmail(guestEmail);
         List<BookingResponse> bookingResponses = bookedRooms.stream().map(this::convertBookedToBookingResponse).toList();
         return ResponseEntity.ok(bookingResponses);
+    }
+
+    //Lấy thông tin đặt phòng theo id
+    @GetMapping("/get/{bookedId}")
+    public ResponseEntity<BookedRoom> getBookedRoomById(@PathVariable("bookedId") Long bookedId){
+        try {
+            return ResponseEntity.ok(bookingService.getBookedById(bookedId));
+        }catch (BookingExeption e){
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     // Convert Booking Request to Booked Room and save in database
@@ -77,7 +89,8 @@ public class BookingController {
                 request.getNumOfAdults() + request.getNumOfChildren(),
                 request.getNote(),
                 request.getTotalPrice(),
-                request.getRoomId());
+                request.getRoomId(),
+                request.getHotelId());
     }
 
     private BookingResponse convertBookedToBookingResponse(BookedRoom bookedRoom) {
@@ -93,6 +106,8 @@ public class BookingController {
                 bookedRoom.getNote(),
                 bookedRoom.getTotalPrice(),
                 bookedRoom.getBookingConfirmationCode(),
-                bookedRoom.getRoomId());
+                bookedRoom.getRoomId(),
+                bookedRoom.getHotelId(),
+                bookedRoom.getBookingStatus());
     }
 }

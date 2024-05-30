@@ -4,8 +4,10 @@ import com.microservice.bookingservice.BookingExeption;
 import com.microservice.bookingservice.dto.InventoryResponse;
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.repository.BookingRepository;
+import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.RandomStringUtils;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -49,5 +51,12 @@ public class BookingService {
 
     public List<BookedRoom> getBookedRoomsByGuestEmail(String guestEmail) {
         return bookingRepository.getBookedRoomsByGuestEmailDESC(guestEmail);
+    }
+
+    public BookedRoom getBookedById(Long bookedId) {
+        if(bookingRepository.findById(bookedId).isPresent()){
+            return bookingRepository.findById(bookedId).get();
+        }
+        throw new BookingExeption("Booked room not found!");
     }
 }
