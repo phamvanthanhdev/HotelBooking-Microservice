@@ -1,5 +1,7 @@
 package com.microservice.bookingservice.controller;
 
+import com.microservice.bookingservice.BookingCancelDateExeption;
+import com.microservice.bookingservice.BookingCancelStatusExeption;
 import com.microservice.bookingservice.BookingExeption;
 import com.microservice.bookingservice.dto.BookingRequest;
 import com.microservice.bookingservice.dto.BookingResponse;
@@ -7,6 +9,7 @@ import com.microservice.bookingservice.dto.MessageBooking;
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.service.BookingService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import jakarta.ws.rs.NotFoundException;
@@ -25,14 +28,17 @@ import java.util.concurrent.CompletableFuture;
 /*@CrossOrigin(origins = "*")*/
 @RequiredArgsConstructor
 public class BookingController {
+    int count = 0;
     private final BookingService bookingService;
     @PostMapping("/book")
     @CircuitBreaker(name="inventory", fallbackMethod = "fallbackMethod")
     /*@TimeLimiter(name = "inventory")*/
-    /*@Retry(name = "inventory")*/
+    /*@Retry(name = "inventory", fallbackMethod = "fallbackMethodRetry")*/
+    /*@RateLimiter(name = "inventory", fallbackMethod = "fallbackMethodRateLimiter")*/
     //CompletableFuture<String> : cũ
     public ResponseEntity<MessageBooking> bookingRoom(@RequestBody BookingRequest bookingRequest){
         System.out.println("Booking " + bookingRequest.toString());
+        System.out.println("Retry count " + ++count);
         if(bookingRequest.getCheckInDate() == null || bookingRequest.getCheckOutDate() == null
                 || bookingRequest.getGuestFullName() == null || bookingRequest.getGuestEmail() == null
                 || bookingRequest.getNumOfAdults() <= 0 || bookingRequest.getNumOfChildren() < 0
@@ -60,6 +66,16 @@ public class BookingController {
         return ResponseEntity.ok(new MessageBooking(503, "Sever bị ngắt kết nối hoặc quá tải, vui lòng thử lại sau!"));
     }
 
+    public ResponseEntity<MessageBooking> fallbackMethodRetry(RuntimeException runtimeException){
+        //return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+        return ResponseEntity.ok(new MessageBooking(503, "Đã cố gắng kết nối lại lần thứ " + count + ", Sever bị ngắt kết nối hoặc quá tải, vui lòng thử lại sau!"));
+    }
+
+    public ResponseEntity<MessageBooking> fallbackMethodRateLimiter(RuntimeException runtimeException){
+        //return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+        return ResponseEntity.ok(new MessageBooking(503, "Vượt quá số lượng yêu cầu được cho phép, vui lòng thử lại sau!"));
+    }
+
     //Lấy danh sách đặt phòng theo email
     @GetMapping("/get-by-email")
     public ResponseEntity<List<BookingResponse>> getBookedRoomsByEmail(@RequestParam("guestEmail") String guestEmail){
@@ -75,6 +91,21 @@ public class BookingController {
             return ResponseEntity.ok(bookingService.getBookedById(bookedId));
         }catch (BookingExeption e){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    //hủy đặt phòng
+    @GetMapping("/cancel-booking/{bookedId}")
+    public ResponseEntity<MessageBooking> cancelBookingRoom(@PathVariable("bookedId") Long bookedId){
+        try {
+            bookingService.cancelBooking(bookedId);
+            return ResponseEntity.ok(new MessageBooking(200, "Hủy đơn đặt phòng thành công!"));
+        } catch (BookingExeption e){
+            return ResponseEntity.ok(new MessageBooking(204, "Không tìm tháy đơn đặt phòng!"));
+        } catch (BookingCancelStatusExeption ex){
+            return ResponseEntity.ok(new MessageBooking(205, "Chỉ được hủy đơn đặt phòng chưa thanh toán!"));
+        } catch (BookingCancelDateExeption exx){
+            return ResponseEntity.ok(new MessageBooking(206, "Chỉ được hủy đơn đặt phòng sớm hơn 7 ngày trước ngày CheckIn!"));
         }
     }
 

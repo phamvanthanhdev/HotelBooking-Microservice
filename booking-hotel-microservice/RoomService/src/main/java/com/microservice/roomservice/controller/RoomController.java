@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/room")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+/*@CrossOrigin(origins = "http://127.0.0.1:5173")*/
 public class RoomController {
     private final RoomService roomService;
     @PostMapping("/add/new-room")
