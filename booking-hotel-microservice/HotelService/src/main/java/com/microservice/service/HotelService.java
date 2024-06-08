@@ -92,4 +92,8 @@ public class HotelService {
     public List<Hotel> getHotelsByCity(String city) {
         return hotelRepository.findByCity(city);
     }
+
+    public List<Hotel> searchHotel(String keyword) {
+        return hotelRepository.searchHotel(keyword);
+    }
 }

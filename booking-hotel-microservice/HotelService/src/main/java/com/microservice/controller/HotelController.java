@@ -95,7 +95,23 @@ public class HotelController {
                 })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(hotelDetailsResponses);
-}
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<HotelResponse>> searchHotels(@RequestParam String keyword) throws SQLException {
+        List<Hotel> hotelList = hotelService.searchHotel(keyword);
+        List<HotelResponse> roomResponses = new ArrayList<>();
+        for (Hotel hotel:hotelList) {
+            byte[] photoBytes = hotelService.getHotelPhotoByHotelId(hotel.getId());
+            if(photoBytes != null && photoBytes.length > 0){
+                String base64Photo = Base64.encodeBase64String(photoBytes);
+                HotelResponse roomResponse = convertHotelToResponse(hotel);
+                roomResponse.setPhoto(base64Photo);
+                roomResponses.add(roomResponse);
+            }
+        }
+        return new ResponseEntity<>(roomResponses, HttpStatus.OK);
+    }
 
     /*@DeleteMapping("/delete/room/{roomId}")
     public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId){
