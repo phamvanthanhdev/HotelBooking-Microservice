@@ -6,6 +6,8 @@ import com.microservice.model.Hotel;
 import com.microservice.service.HotelService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 public class HotelController {
     private final HotelService hotelService;
+    private static final Logger LOGGER
+            = LoggerFactory.getLogger(HotelController.class);
     //PHAM VAN THANH
     @PostMapping
     public ResponseEntity<HotelResponse> createHotel(@RequestParam("photo") MultipartFile photo,
@@ -34,6 +38,8 @@ public class HotelController {
                                                      @RequestParam("city") String city,
                                                      @RequestParam("description") String description,
                                                      @RequestParam("price") BigDecimal price) throws IOException, SQLException {
+        LOGGER.info("Create hotel");
+
         Hotel savedHotel = hotelService.createHotel(photo, name, address, city, description, price);
         HotelResponse response = convertHotelToResponse(savedHotel);
 
@@ -42,6 +48,7 @@ public class HotelController {
 
     @GetMapping("/all-hotels")
     public ResponseEntity<List<HotelResponse>> getAllHotels() throws SQLException {
+        LOGGER.info("Get all hotels");
         List<Hotel> hotelList = hotelService.getAllHotels();
         List<HotelResponse> roomResponses = new ArrayList<>();
         for (Hotel hotel:hotelList) {
@@ -56,9 +63,27 @@ public class HotelController {
         return ResponseEntity.ok(roomResponses);
     }
 
+    @GetMapping("/hotels-by-ids")
+    public ResponseEntity<List<String>> getHotelsByIds(@RequestParam List<Long> idsHotel) throws SQLException {
+        LOGGER.info("Get hotels by ids");
+        List<byte[]> hotelsImageByte = hotelService.getHotelsImageByIds(idsHotel);
+        List<String> hotelsImageBase64 = new ArrayList<>();
+        for (byte[] imageBytes:hotelsImageByte) {
+            String base64Photo = null;
+            if(imageBytes != null && imageBytes.length > 0){
+                base64Photo = Base64.encodeBase64String(imageBytes);
+            }
+            hotelsImageBase64.add(base64Photo);
+//            break;
+        }
+        System.out.println("size" + hotelsImageByte.size());
+        return ResponseEntity.ok(hotelsImageBase64);
+    }
+
     @GetMapping("/get/{hotelId}")
     public ResponseEntity<?> getHotelByHotelId(@PathVariable Long hotelId)
                                                 throws SQLException {
+        LOGGER.info("Get hotel by id");
         try {
             Hotel hotel = hotelService.getHotelByHotelId(hotelId);
             HotelDetailResponse hotelDetail = convertHotelToDetail(hotel);
@@ -70,6 +95,7 @@ public class HotelController {
 
     @GetMapping("/get/locations")
     public ResponseEntity<List<String>> getAllCities(){
+        LOGGER.info("get locations");
         List<String> cities = hotelService.getAllCities();
         return ResponseEntity.ok(cities);
     }
@@ -84,6 +110,7 @@ public class HotelController {
 //    }
     @GetMapping("/city/{cityName}")
     public ResponseEntity<List<HotelDetailResponse>> getHotelsByCity(@PathVariable String cityName) {
+        LOGGER.info("get hotel by city name");
         List<Hotel> hotels = hotelService.getHotelsByCity(cityName);
         List<HotelDetailResponse> hotelDetailsResponses = hotels.stream()
                 .map(hotel -> {
@@ -99,6 +126,7 @@ public class HotelController {
 
     @GetMapping("/search")
     public ResponseEntity<List<HotelResponse>> searchHotels(@RequestParam String keyword) throws SQLException {
+        LOGGER.info("search hotels by keyword");
         List<Hotel> hotelList = hotelService.searchHotel(keyword);
         List<HotelResponse> roomResponses = new ArrayList<>();
         for (Hotel hotel:hotelList) {

@@ -5,6 +5,7 @@ import com.microservice.bookingservice.BookingCancelStatusExeption;
 import com.microservice.bookingservice.BookingExeption;
 import com.microservice.bookingservice.dto.BookingRequest;
 import com.microservice.bookingservice.dto.BookingResponse;
+import com.microservice.bookingservice.dto.HistoryBookingResponse;
 import com.microservice.bookingservice.dto.MessageBooking;
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.service.BookingService;
@@ -14,6 +15,8 @@ import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +33,10 @@ import java.util.concurrent.CompletableFuture;
 public class BookingController {
     int count = 0;
     private final BookingService bookingService;
+
+    private static final Logger LOGGER
+            = LoggerFactory.getLogger(BookingController.class);
+
     @PostMapping("/book")
     @CircuitBreaker(name="inventory", fallbackMethod = "fallbackMethod")
     /*@TimeLimiter(name = "inventory")*/
@@ -37,8 +44,9 @@ public class BookingController {
     /*@RateLimiter(name = "inventory", fallbackMethod = "fallbackMethodRateLimiter")*/
     //CompletableFuture<String> : cũ
     public ResponseEntity<MessageBooking> bookingRoom(@RequestBody BookingRequest bookingRequest){
-        System.out.println("Booking " + bookingRequest.toString());
-        System.out.println("Retry count " + ++count);
+        LOGGER.info("Add booked room");
+        /*System.out.println("Booking " + bookingRequest.toString());
+        System.out.println("Retry count " + ++count);*/
         if(bookingRequest.getCheckInDate() == null || bookingRequest.getCheckOutDate() == null
                 || bookingRequest.getGuestFullName() == null || bookingRequest.getGuestEmail() == null
                 || bookingRequest.getNumOfAdults() <= 0 || bookingRequest.getNumOfChildren() < 0
@@ -79,14 +87,24 @@ public class BookingController {
     //Lấy danh sách đặt phòng theo email
     @GetMapping("/get-by-email")
     public ResponseEntity<List<BookingResponse>> getBookedRoomsByEmail(@RequestParam("guestEmail") String guestEmail){
+        LOGGER.info("Get list booked room by email");
         List<BookedRoom> bookedRooms = bookingService.getBookedRoomsByGuestEmail(guestEmail);
         List<BookingResponse> bookingResponses = bookedRooms.stream().map(this::convertBookedToBookingResponse).toList();
         return ResponseEntity.ok(bookingResponses);
     }
 
+    @GetMapping("/history-booked-email")
+    public ResponseEntity<List<HistoryBookingResponse>> getHistoryBookedRoomsByEmail(@RequestParam("guestEmail") String guestEmail){
+        LOGGER.info("Get list history booked room by email");
+        List<HistoryBookingResponse> historyBookingResponses = bookingService.getHistoryBookedByGuestEmail(guestEmail);
+
+        return new ResponseEntity<>(historyBookingResponses, HttpStatus.OK);
+    }
+
     //Lấy thông tin đặt phòng theo id
     @GetMapping("/get/{bookedId}")
     public ResponseEntity<BookedRoom> getBookedRoomById(@PathVariable("bookedId") Long bookedId){
+        LOGGER.info("Get booked room by id");
         try {
             return ResponseEntity.ok(bookingService.getBookedById(bookedId));
         }catch (BookingExeption e){
@@ -97,6 +115,7 @@ public class BookingController {
     //hủy đặt phòng
     @GetMapping("/cancel-booking/{bookedId}")
     public ResponseEntity<MessageBooking> cancelBookingRoom(@PathVariable("bookedId") Long bookedId){
+        LOGGER.info("Cancel booking");
         try {
             bookingService.cancelBooking(bookedId);
             return ResponseEntity.ok(new MessageBooking(200, "Hủy đơn đặt phòng thành công!"));
@@ -111,6 +130,7 @@ public class BookingController {
 
     @GetMapping("/success-booking/{bookedId}")
     public ResponseEntity<BookingResponse> successBookingRoom(@PathVariable("bookedId") Long bookedId){
+        LOGGER.info("Success booked room by email");
         BookedRoom bookedRoom = bookingService.successBooking(bookedId);
         BookingResponse response = convertBookedToBookingResponse(bookedRoom);
         return new ResponseEntity<>(response, HttpStatus.OK);

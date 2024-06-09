@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -95,5 +96,14 @@ public class HotelService {
 
     public List<Hotel> searchHotel(String keyword) {
         return hotelRepository.searchHotel(keyword);
+    }
+
+    public List<byte[]> getHotelsImageByIds(List<Long> ids) throws SQLException {
+        List<byte[]> hotelsImage = new ArrayList<>();
+        for (Long id:ids) {
+            hotelsImage.add(getHotelPhotoByHotelId(id));
+            //break;
+        }
+        return hotelsImage;
     }
 }

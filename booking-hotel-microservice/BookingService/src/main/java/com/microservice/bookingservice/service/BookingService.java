@@ -1,14 +1,21 @@
 package com.microservice.bookingservice.service;
 
+import brave.Span;
+import brave.Tracer;
 import com.microservice.bookingservice.BookingCancelDateExeption;
 import com.microservice.bookingservice.BookingCancelStatusExeption;
 import com.microservice.bookingservice.BookingExeption;
+import com.microservice.bookingservice.dto.BookingResponse;
+import com.microservice.bookingservice.dto.HistoryBookingResponse;
+import com.microservice.bookingservice.dto.HotelDetailResponse;
 import com.microservice.bookingservice.dto.InventoryResponse;
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.repository.BookingRepository;
 import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +23,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -24,11 +33,14 @@ import java.util.List;
 public class BookingService {
     private final BookingRepository bookingRepository;
     private final WebClient.Builder webClientBuilder;
+
+    private final Tracer tracer;
     public String saveBooking(BookedRoom bookingRequest) {
         if(bookingRequest.getCheckOutDate().isBefore(bookingRequest.getCheckInDate())){
             throw  new BookingExeption("Check-in date must come before check-out date");
         }
         Long roomId = bookingRequest.getRoomId();
+
         //Call Inventory Server, and booking room success if room is available
         InventoryResponse inventoryRespone = webClientBuilder.build() .get()
                 .uri("http://inventory-service/api/inventory",
@@ -50,11 +62,55 @@ public class BookingService {
             throw new IllegalArgumentException("Room is not available, please try again later");
             //return "Room is not available, please try again later";
         }
-
     }
 
     public List<BookedRoom> getBookedRoomsByGuestEmail(String guestEmail) {
         return bookingRepository.getBookedRoomsByGuestEmailDESC(guestEmail);
+    }
+
+    public List<HistoryBookingResponse> getHistoryBookedByGuestEmail(String guestEmail) {
+        List<BookedRoom> bookedRooms = bookingRepository.getBookedRoomsByGuestEmailDESC(guestEmail);
+
+        List<Long> idsHotel = new ArrayList<>();
+        for (BookedRoom booked:bookedRooms) {
+            idsHotel.add(booked.getHotelId());
+        }
+        //Call HotelService
+        String[] hotelsImage = webClientBuilder.build() .get()
+                .uri("http://hotel-service/api/hotel/hotels-by-ids",
+                        uriBuilder -> uriBuilder.queryParam("idsHotel", idsHotel).build())
+                .retrieve()
+                .bodyToMono(String[].class)//Kiểu dữ liệu trả về
+                .block();
+
+        List<HistoryBookingResponse> historyBookingResponses = new ArrayList<>();
+        for (int i = 0; i < bookedRooms.size(); i++) {
+            HistoryBookingResponse historyBookingResponse =
+                    convertBookedToHistoryBookingResponse(bookedRooms.get(i), hotelsImage[i]);
+            historyBookingResponses.add(historyBookingResponse);
+//            break;
+        }
+
+        return historyBookingResponses;
+    }
+
+    private HistoryBookingResponse convertBookedToHistoryBookingResponse(BookedRoom bookedRoom, String hotelImage) {
+        return new HistoryBookingResponse(
+                bookedRoom.getBookingId(),
+                bookedRoom.getCheckInDate(),
+                bookedRoom.getCheckOutDate(),
+                bookedRoom.getGuestFullName(),
+                bookedRoom.getGuestEmail(),
+                bookedRoom.getNumOfAdults(),
+                bookedRoom.getNumOfChildren(),
+                bookedRoom.getTotalNumOfGuest(),
+                bookedRoom.getNote(),
+                bookedRoom.getTotalPrice(),
+                bookedRoom.getBookingConfirmationCode(),
+                bookedRoom.getRoomId(),
+                bookedRoom.getHotelId(),
+                hotelImage,
+                bookedRoom.getBookingStatus());
     }
 
     public BookedRoom getBookedById(Long bookedId) {
