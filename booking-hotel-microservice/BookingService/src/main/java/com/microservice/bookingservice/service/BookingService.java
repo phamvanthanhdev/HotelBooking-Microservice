@@ -9,6 +9,7 @@ import com.microservice.bookingservice.dto.BookingResponse;
 import com.microservice.bookingservice.dto.HistoryBookingResponse;
 import com.microservice.bookingservice.dto.HotelDetailResponse;
 import com.microservice.bookingservice.dto.InventoryResponse;
+import com.microservice.bookingservice.event.BookingPlaceEvent;
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.repository.BookingRepository;
 import jakarta.ws.rs.NotFoundException;
@@ -17,6 +18,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+//import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -33,8 +35,9 @@ import java.util.List;
 public class BookingService {
     private final BookingRepository bookingRepository;
     private final WebClient.Builder webClientBuilder;
-
     private final Tracer tracer;
+//    private final KafkaTemplate<String, BookingPlaceEvent> kafkaTemplate;
+
     public String saveBooking(BookedRoom bookingRequest) {
         if(bookingRequest.getCheckOutDate().isBefore(bookingRequest.getCheckInDate())){
             throw  new BookingExeption("Check-in date must come before check-out date");
@@ -57,6 +60,9 @@ public class BookingService {
             bookingRequest.setBookingConfirmationCode(bookingCode);
 
             bookingRepository.save(bookingRequest);
+
+//            kafkaTemplate.send("notificationTopic", new BookingPlaceEvent(bookingRequest.getBookingId()));
+
             return "Room booked successfully, Your booking confirmation code is : " + bookingRequest.getBookingConfirmationCode();
         }else {
             throw new IllegalArgumentException("Room is not available, please try again later");
@@ -149,5 +155,12 @@ public class BookingService {
             return bookingRepository.save(bookedRoom);
         }
         throw new BookingExeption("Booked room not found!");
+    }
+
+    public BookedRoom successBookingByConfirmationCode(String code) {
+        BookedRoom bookedRoom = bookingRepository.findByBookingConfirmationCode(code);
+
+        bookedRoom.setBookingStatus("Đã thanh toán");
+        return bookingRepository.save(bookedRoom);
     }
 }

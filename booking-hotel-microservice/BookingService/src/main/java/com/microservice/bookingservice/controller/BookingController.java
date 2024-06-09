@@ -128,10 +128,18 @@ public class BookingController {
         }
     }
 
-    @GetMapping("/success-booking/{bookedId}")
+    @PutMapping("/success-booking/{bookedId}")
     public ResponseEntity<BookingResponse> successBookingRoom(@PathVariable("bookedId") Long bookedId){
-        LOGGER.info("Success booked room by email");
+        LOGGER.info("Success booked room");
         BookedRoom bookedRoom = bookingService.successBooking(bookedId);
+        BookingResponse response = convertBookedToBookingResponse(bookedRoom);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/success-booking-code")
+    public ResponseEntity<BookingResponse> successBookingByCode(@RequestParam String code){
+        LOGGER.info("Success booked room by Code");
+        BookedRoom bookedRoom = bookingService.successBookingByConfirmationCode(code);
         BookingResponse response = convertBookedToBookingResponse(bookedRoom);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
