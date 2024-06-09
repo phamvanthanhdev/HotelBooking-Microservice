@@ -109,6 +109,13 @@ public class BookingController {
         }
     }
 
+    @GetMapping("/success-booking/{bookedId}")
+    public ResponseEntity<BookingResponse> successBookingRoom(@PathVariable("bookedId") Long bookedId){
+        BookedRoom bookedRoom = bookingService.successBooking(bookedId);
+        BookingResponse response = convertBookedToBookingResponse(bookedRoom);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     // Convert Booking Request to Booked Room and save in database
     private BookedRoom convertRequestToBooked(BookingRequest request) {
         return new BookedRoom(request.getCheckInDate(),

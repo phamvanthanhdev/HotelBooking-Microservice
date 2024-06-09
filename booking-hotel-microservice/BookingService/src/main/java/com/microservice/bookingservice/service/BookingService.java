@@ -83,4 +83,15 @@ public class BookingService {
         }
         throw new BookingExeption("Booked room not found!");
     }
+
+
+    public BookedRoom successBooking(Long bookedId) {
+        if(bookingRepository.findById(bookedId).isPresent()){
+            BookedRoom bookedRoom = bookingRepository.findById(bookedId).get();
+
+            bookedRoom.setBookingStatus("Đã thanh toán");
+            return bookingRepository.save(bookedRoom);
+        }
+        throw new BookingExeption("Booked room not found!");
+    }
 }
