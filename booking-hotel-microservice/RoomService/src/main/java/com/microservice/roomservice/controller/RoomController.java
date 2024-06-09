@@ -1,5 +1,6 @@
 package com.microservice.roomservice.controller;
 
+import com.microservice.roomservice.dto.RoomQuantityResponse;
 import com.microservice.roomservice.dto.RoomResponse;
 import com.microservice.roomservice.model.Room;
 import com.microservice.roomservice.service.RoomService;
@@ -68,6 +69,13 @@ public class RoomController {
         return ResponseEntity.ok(roomResponses);
     }
 
+    //Lay danh sach loai phong kem theo so luong phong trong
+    @GetMapping("/rooms-quantity-hotel/{hotelId}")
+    public ResponseEntity<List<RoomQuantityResponse>> getRoomsQuantityByHotelId(@PathVariable("hotelId") Long hotelId) throws SQLException {
+        List<RoomQuantityResponse> roomQuantityResponses = roomService.getRoomsQuantityByHotelId(hotelId);
+        return new ResponseEntity<>(roomQuantityResponses, HttpStatus.OK);
+    }
+
     @DeleteMapping("/delete/room/{roomId}")
     public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId){
         roomService.deleteRoom(roomId);
@@ -105,13 +113,9 @@ public class RoomController {
     }
 
     @GetMapping("/rooms-by-hotel-and-type/{hotelId}/{typeRoom}")
-    public ResponseEntity<List<RoomResponse>> getRoomsByHotelIdAndType(@PathVariable Long hotelId, @PathVariable String typeRoom) throws SQLException{
-        List<Room> roomList = roomService.getRoomsByHotelIdAndTypeRoom(hotelId, typeRoom);
-        List<RoomResponse> roomResponses = new ArrayList<>();
-        for (Room room:roomList) {
-            roomResponses.add(getRoomRespone(room));
-        }
-        return ResponseEntity.ok(roomResponses);
+    public ResponseEntity<List<RoomQuantityResponse>> getRoomsByHotelIdAndType(@PathVariable Long hotelId, @PathVariable String typeRoom) throws SQLException{
+        List<RoomQuantityResponse> roomQuantityResponses = roomService.getRoomsByHotelIdAndTypeRoom(hotelId, typeRoom);
+        return new ResponseEntity<>(roomQuantityResponses, HttpStatus.OK);
     }
 
     //Convert Room to RoomResponse return Frontend
