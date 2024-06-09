@@ -9,7 +9,7 @@ import com.microservice.bookingservice.dto.BookingResponse;
 import com.microservice.bookingservice.dto.HistoryBookingResponse;
 import com.microservice.bookingservice.dto.HotelDetailResponse;
 import com.microservice.bookingservice.dto.InventoryResponse;
-import com.microservice.bookingservice.event.BookingPlaceEvent;
+//import com.microservice.bookingservice.event.BookingPlaceEvent;
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.repository.BookingRepository;
 import jakarta.ws.rs.NotFoundException;
