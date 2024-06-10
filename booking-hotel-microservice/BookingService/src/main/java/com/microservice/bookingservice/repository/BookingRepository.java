@@ -12,4 +12,7 @@ public interface BookingRepository extends JpaRepository<BookedRoom, Long> {
     List<BookedRoom> getBookedRoomsByGuestEmailDESC(@Param("email") String email);
 
     BookedRoom findByBookingConfirmationCode(String code);
+
+    @Query("SELECT b FROM BookedRoom b ORDER BY b.bookingId DESC")
+    List<BookedRoom> getAllBookedRoomsDESC();
 }

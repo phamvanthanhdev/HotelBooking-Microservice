@@ -107,6 +107,10 @@ public class BookingService {
         return bookingRepository.getBookedRoomsByGuestEmailDESC(guestEmail);
     }
 
+    public List<BookedRoom> getAllBookedRooms() {
+        return bookingRepository.getAllBookedRoomsDESC();
+    }
+
     public List<HistoryBookingResponse> getHistoryBookedByGuestEmail(String guestEmail) {
         List<BookedRoom> bookedRooms = bookingRepository.getBookedRoomsByGuestEmailDESC(guestEmail);
 

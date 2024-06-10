@@ -90,6 +90,15 @@ public class BookingController {
         return ResponseEntity.ok(bookingResponses);
     }
 
+    //Lấy tat ca danh sách đặt phòng
+    @GetMapping("/all")
+    public ResponseEntity<List<BookingResponse>> getAllBookedRooms(){
+        LOGGER.info("Get all booked room");
+        List<BookedRoom> bookedRooms = bookingService.getAllBookedRooms();
+        List<BookingResponse> bookingResponses = bookedRooms.stream().map(this::convertBookedToBookingResponse).toList();
+        return ResponseEntity.ok(bookingResponses);
+    }
+
     @GetMapping("/history-booked-email")
     public ResponseEntity<List<HistoryBookingResponse>> getHistoryBookedRoomsByEmail(@RequestParam("guestEmail") String guestEmail){
         LOGGER.info("Get list history booked room by email");
