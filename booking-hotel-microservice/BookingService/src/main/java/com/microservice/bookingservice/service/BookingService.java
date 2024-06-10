@@ -12,6 +12,8 @@ import com.microservice.bookingservice.dto.InventoryResponse;
 //import com.microservice.bookingservice.event.BookingPlaceEvent;
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.repository.BookingRepository;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.codec.binary.Base64;
@@ -36,6 +38,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final WebClient.Builder webClientBuilder;
     private final Tracer tracer;
+    private final ObservationRegistry observationRegistry;
 //    private final KafkaTemplate<String, BookingPlaceEvent> kafkaTemplate;
 
     public String saveBooking(BookedRoom bookingRequest) {
@@ -45,7 +48,37 @@ public class BookingService {
         Long roomId = bookingRequest.getRoomId();
 
         //Call Inventory Server, and booking room success if room is available
-        InventoryResponse inventoryRespone = webClientBuilder.build() .get()
+        Observation inventoryServiceObservation = Observation.createNotStarted("inventory-service-lookup",
+                this.observationRegistry);
+        inventoryServiceObservation.lowCardinalityKeyValue("call", "inventory-service");
+        return inventoryServiceObservation.observe(() -> {
+                    InventoryResponse inventoryResponse = webClientBuilder.build().get()
+                            .uri("http://inventory-service/api/inventory",
+                                    uriBuilder -> uriBuilder.queryParam("roomId", roomId).build())
+                            .retrieve()
+                            .bodyToMono(InventoryResponse.class)
+                            .block();
+
+                    Boolean roomIsAvailable = inventoryResponse.isAvailable();
+
+                    if(roomIsAvailable) {
+                        bookingRequest.setRoomId(roomId);
+                        String bookingCode = RandomStringUtils.randomNumeric(10);
+                        bookingRequest.setBookingConfirmationCode(bookingCode);
+
+                        bookingRepository.save(bookingRequest);
+
+        //            kafkaTemplate.send("notificationTopic", new BookingPlaceEvent(bookingRequest.getBookingId()));
+
+                        return "Room booked successfully, Your booking confirmation code is : " + bookingRequest.getBookingConfirmationCode();
+                    }else {
+                        throw new IllegalArgumentException("Room is not available, please try again later");
+                        //return "Room is not available, please try again later";
+                    }
+                });
+
+
+        /*InventoryResponse inventoryRespone = webClientBuilder.build() .get()
                 .uri("http://inventory-service/api/inventory",
                         uriBuilder -> uriBuilder.queryParam("roomId", roomId).build())
                 .retrieve()
@@ -67,7 +100,7 @@ public class BookingService {
         }else {
             throw new IllegalArgumentException("Room is not available, please try again later");
             //return "Room is not available, please try again later";
-        }
+        }*/
     }
 
     public List<BookedRoom> getBookedRoomsByGuestEmail(String guestEmail) {
@@ -142,6 +175,25 @@ public class BookingService {
             bookedRoom.setBookingStatus("Đã hủy");
             bookingRepository.save(bookedRoom);
             return;
+        }
+        throw new BookingExeption("Booked room not found!");
+    }
+
+    public BookedRoom cancelBookingRoom(Long bookedId) {
+        if(bookingRepository.findById(bookedId).isPresent()){
+            BookedRoom bookedRoom = bookingRepository.findById(bookedId).get();
+
+            if(!bookedRoom.getBookingStatus().equals("Chưa thanh toán")){
+                throw new BookingCancelStatusExeption("Chỉ được hủy đơn đặt phòng chưa thanh toán!");
+            }
+            long daysBetween = ChronoUnit.DAYS.between(bookedRoom.getCheckInDate(), LocalDate.now());
+            System.out.println("day between: " + daysBetween);
+            if(daysBetween >= 7){
+                throw new BookingCancelDateExeption("Chỉ được hủy đơn đặt phòng sớm hơn 7 ngày trước ngày CheckIn!");
+            }
+
+            bookedRoom.setBookingStatus("Đã hủy");
+            return bookingRepository.save(bookedRoom);
         }
         throw new BookingExeption("Booked room not found!");
     }

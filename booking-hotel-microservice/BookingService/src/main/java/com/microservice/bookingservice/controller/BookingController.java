@@ -3,10 +3,7 @@ package com.microservice.bookingservice.controller;
 import com.microservice.bookingservice.BookingCancelDateExeption;
 import com.microservice.bookingservice.BookingCancelStatusExeption;
 import com.microservice.bookingservice.BookingExeption;
-import com.microservice.bookingservice.dto.BookingRequest;
-import com.microservice.bookingservice.dto.BookingResponse;
-import com.microservice.bookingservice.dto.HistoryBookingResponse;
-import com.microservice.bookingservice.dto.MessageBooking;
+import com.microservice.bookingservice.dto.*;
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.service.BookingService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -128,6 +125,23 @@ public class BookingController {
         }
     }
 
+    //hủy đặt phòng trả về phòng đã cancel
+    @PutMapping("/cancel-booking-room/{bookedId}")
+    public ResponseEntity<MessageBookingResponse> cancelBookingRoomReturnMessage(@PathVariable("bookedId") Long bookedId){
+        LOGGER.info("Cancel booking");
+        try {
+            BookedRoom bookedRoom = bookingService.cancelBookingRoom(bookedId);
+            MessageBookingResponse messageBooking = convertBookedToMessageBooking(200, "Hủy đơn đặt phòng thành công", bookedRoom);
+            return new ResponseEntity<>(messageBooking, HttpStatus.OK);
+        } catch (BookingExeption e){
+            return ResponseEntity.ok(new MessageBookingResponse(204, "Không tìm tháy đơn đặt phòng!", null));
+        } catch (BookingCancelStatusExeption ex){
+            return ResponseEntity.ok(new MessageBookingResponse(205, "Chỉ được hủy đơn đặt phòng chưa thanh toán!", null));
+        } catch (BookingCancelDateExeption exx){
+            return ResponseEntity.ok(new MessageBookingResponse(206, "Chỉ được hủy đơn đặt phòng sớm hơn 7 ngày trước ngày CheckIn!", null));
+        }
+    }
+
     @PutMapping("/success-booking/{bookedId}")
     public ResponseEntity<BookingResponse> successBookingRoom(@PathVariable("bookedId") Long bookedId){
         LOGGER.info("Success booked room");
@@ -142,6 +156,11 @@ public class BookingController {
         BookedRoom bookedRoom = bookingService.successBookingByConfirmationCode(code);
         BookingResponse response = convertBookedToBookingResponse(bookedRoom);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    //Convert BookedRoom to MessageBookingRoom(code, mess, booked)
+    private MessageBookingResponse convertBookedToMessageBooking(int code, String mess, BookedRoom bookedRoom){
+        return new MessageBookingResponse(code, mess, bookedRoom);
     }
 
     // Convert Booking Request to Booked Room and save in database
