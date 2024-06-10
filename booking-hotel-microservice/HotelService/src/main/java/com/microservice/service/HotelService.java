@@ -73,6 +73,26 @@ public class HotelService {
         return hotelRepository.save(hotel);
     }
 
+    public Hotel updateHotel(Long id,MultipartFile file, String name, String address, String city, String description, BigDecimal price) throws IOException, SQLException {
+        Hotel hotel = getHotelByHotelId(id);
+        if(name != null)
+            hotel.setName(name);
+        if(address != null)
+            hotel.setAddress(address);
+        if(city != null)
+            hotel.setCity(city);
+        if(description != null)
+            hotel.setDescription(description);
+        if(price != null)
+            hotel.setPrice(price);
+        if(file != null){
+            byte[] photoBytes = file.getBytes();
+            Blob photoBlod = new SerialBlob(photoBytes);
+            hotel.setPhoto(photoBlod);
+        }
+        return hotelRepository.save(hotel);
+    }
+
     public List<Hotel> getAllHotels() {
         return hotelRepository.findAll();
     }
@@ -105,5 +125,10 @@ public class HotelService {
             //break;
         }
         return hotelsImage;
+    }
+
+    public void deleteHotel(Long id) {
+        Hotel hotel = getHotelByHotelId(id);
+        hotelRepository.delete(hotel);
     }
 }

@@ -1,6 +1,7 @@
 package com.microservice.controller;
 
 import com.microservice.dto.HotelDetailResponse;
+import com.microservice.dto.HotelIdResponse;
 import com.microservice.dto.HotelResponse;
 import com.microservice.model.Hotel;
 import com.microservice.service.HotelService;
@@ -45,6 +46,31 @@ public class HotelController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<HotelResponse> updateHotel(@PathVariable Long id,
+                                                    @RequestParam(value = "photo", required = false) MultipartFile photo,
+                                                     @RequestParam(value = "name", required = false) String name,
+                                                     @RequestParam(value = "address", required = false) String address,
+                                                     @RequestParam(value = "city", required = false) String city,
+                                                     @RequestParam(value = "description", required = false) String description,
+                                                     @RequestParam(value = "price", required = false) BigDecimal price) throws IOException, SQLException {
+        LOGGER.info("Update hotel");
+
+        Hotel updatedHotel = hotelService.updateHotel(id,photo, name, address, city, description, price);
+        HotelResponse response = convertHotelToResponse(updatedHotel);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<HotelIdResponse> deleteHotel(@PathVariable Long id) throws IOException, SQLException {
+        LOGGER.info("delete hotel");
+        hotelService.deleteHotel(id);
+
+        return ResponseEntity.ok(new HotelIdResponse(id));
+    }
+
+
 
     @GetMapping("/all-hotels")
     public ResponseEntity<List<HotelResponse>> getAllHotels() throws SQLException {
