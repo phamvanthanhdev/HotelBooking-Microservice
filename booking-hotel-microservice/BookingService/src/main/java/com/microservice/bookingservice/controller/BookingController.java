@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -165,6 +166,26 @@ public class BookingController {
         BookedRoom bookedRoom = bookingService.successBookingByConfirmationCode(code);
         BookingResponse response = convertBookedToBookingResponse(bookedRoom);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/admin/update-status/{id}")
+    public ResponseEntity<BookingResponse> updateStatusBookingById(@PathVariable Long id,
+                                                                   @RequestParam String status) throws Exception {
+        LOGGER.info("update status booked room by id");
+        BookedRoom bookedRoom = bookingService.updateStatus(id, status);
+        BookingResponse response = convertBookedToBookingResponse(bookedRoom);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/admin/statistic")
+    public ResponseEntity<List<StatisticResponse>> getStatistic(@RequestParam String dateStart,
+                                                        @RequestParam String dateEnd) throws Exception {
+        LOGGER.info("update status booked room by id");
+        LOGGER.info("start " + dateStart + " end " +dateEnd);
+        List<StatisticResponse> statisticResponses = bookingService.getStatistic(dateStart, dateEnd);
+//        List<BookingResponse> responses = bookedRooms.stream().map(this::convertBookedToBookingResponse).toList();
+//        LOGGER.info("Size: " + responses.size());
+        return new ResponseEntity<>(statisticResponses, HttpStatus.OK);
     }
 
     //Convert BookedRoom to MessageBookingRoom(code, mess, booked)

@@ -5,10 +5,7 @@ import brave.Tracer;
 import com.microservice.bookingservice.BookingCancelDateExeption;
 import com.microservice.bookingservice.BookingCancelStatusExeption;
 import com.microservice.bookingservice.BookingExeption;
-import com.microservice.bookingservice.dto.BookingResponse;
-import com.microservice.bookingservice.dto.HistoryBookingResponse;
-import com.microservice.bookingservice.dto.HotelDetailResponse;
-import com.microservice.bookingservice.dto.InventoryResponse;
+import com.microservice.bookingservice.dto.*;
 //import com.microservice.bookingservice.event.BookingPlaceEvent;//
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.repository.BookingRepository;
@@ -26,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -221,5 +219,43 @@ public class BookingService {
 
         bookedRoom.setBookingStatus("Đã thanh toán");
         return bookingRepository.save(bookedRoom);
+    }
+
+    public BookedRoom updateStatus(Long id, String status) throws Exception {
+        if(bookingRepository.findById(id).isPresent()){
+            BookedRoom bookedRoom = bookingRepository.findById(id).get();
+            if(status.trim().equals("Đã thanh toán")
+                    || status.trim().equals("Chưa thanh toán")
+                    || status.trim().equals("Đã hủy")) {
+                bookedRoom.setBookingStatus(status);
+
+                return bookingRepository.save(bookedRoom);
+            }
+            throw new Exception("Status booked is invalid!");
+        }
+        throw new BookingExeption("Booked room not found!");
+    }
+
+    public List<StatisticResponse> getStatistic(String dateStart, String dateEnd) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        LocalDate localDateStart = LocalDate.parse(dateStart, formatter);
+        LocalDate localDateEnd = LocalDate.parse(dateEnd, formatter);
+
+        List<StatisticResponse> statisticResponses = new ArrayList<>();
+        for (int i = localDateStart.getMonthValue(); i < localDateEnd.getMonthValue(); i++) {
+            StatisticResponse response = new StatisticResponse();
+            response.setMonth(i);
+            List<BookedRoom> bookedRooms = bookingRepository.findBookedRoomsByMonthAndYear(i, localDateStart, localDateEnd);
+            response.setQuantity(bookedRooms.size());
+            long total = 0L;
+            for (BookedRoom bookedRoom:bookedRooms) {
+                total += bookedRoom.getTotalPrice().longValue();
+            }
+            response.setTotal(total);
+            statisticResponses.add(response);
+        }
+
+        return statisticResponses;
     }
 }
