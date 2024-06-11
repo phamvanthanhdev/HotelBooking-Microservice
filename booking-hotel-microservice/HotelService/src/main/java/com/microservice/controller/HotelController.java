@@ -3,6 +3,7 @@ package com.microservice.controller;
 import com.microservice.dto.HotelDetailResponse;
 import com.microservice.dto.HotelIdResponse;
 import com.microservice.dto.HotelResponse;
+import com.microservice.dto.User;
 import com.microservice.model.Hotel;
 import com.microservice.service.HotelService;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,21 @@ public class HotelController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/admin")
+    public ResponseEntity<HotelResponse> createHotelAuth(@RequestParam("photo") MultipartFile photo,
+                                                     @RequestParam("name") String name,
+                                                     @RequestParam("address") String address,
+                                                     @RequestParam("city") String city,
+                                                     @RequestParam("description") String description,
+                                                     @RequestParam("price") BigDecimal price,
+                                                     @RequestHeader("Authorization") String jwt) throws IOException, SQLException {
+        LOGGER.info("Create hotel with auth");
+        Hotel savedHotel = hotelService.createHotelAuth(photo, name, address, city, description, price, jwt);
+        HotelResponse response = convertHotelToResponse(savedHotel);
+
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<HotelResponse> updateHotel(@PathVariable Long id,
                                                     @RequestParam(value = "photo", required = false) MultipartFile photo,
@@ -69,8 +85,6 @@ public class HotelController {
 
         return ResponseEntity.ok(new HotelIdResponse(id));
     }
-
-
 
     @GetMapping("/all-hotels")
     public ResponseEntity<List<HotelResponse>> getAllHotels() throws SQLException {

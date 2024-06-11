@@ -1,10 +1,13 @@
 package com.microservice.service;
 
+import com.microservice.dto.User;
+import com.microservice.dto.UserResponse;
 import com.microservice.model.Hotel;
 import com.microservice.repository.HotelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
@@ -19,6 +22,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class HotelService {
     private final HotelRepository hotelRepository;
+    private final WebClient.Builder webClientBuilder;
 
     public byte[] getHotelPhotoByHotelId(Long id) throws SQLException {
         Optional<Hotel> theHotel = hotelRepository.findById(id);
@@ -71,6 +75,36 @@ public class HotelService {
             hotel.setPhoto(photoBlod);
         }
         return hotelRepository.save(hotel);
+    }
+
+    public Hotel createHotelAuth(MultipartFile file, String name, String address,
+                                 String city, String description,
+                                 BigDecimal price, String jwt) throws IOException, SQLException {
+        //Call UserService
+        UserResponse user = webClientBuilder.defaultHeader("Authorization", jwt)
+                .build() .get()
+                .uri("http://user-service/api/users/profile",
+                        uriBuilder -> uriBuilder.build())
+                .retrieve()
+                .bodyToMono(UserResponse.class)//Kiểu dữ liệu trả về
+                .block();
+        System.out.println("User" + user.toString());
+        if(user.getRole().equals("ROLE_ADMIN")) {
+            Hotel hotel = new Hotel();
+            hotel.setName(name);
+            hotel.setAddress(address);
+            hotel.setCity(city);
+            hotel.setDescription(description);
+            hotel.setPrice(price);
+            hotel.setRating(5.0);
+            if (!file.isEmpty()) {
+                byte[] photoBytes = file.getBytes();
+                Blob photoBlod = new SerialBlob(photoBytes);
+                hotel.setPhoto(photoBlod);
+            }
+            return hotelRepository.save(hotel);
+        }
+        throw new RuntimeException("User has not role create Hotel");
     }
 
     public Hotel updateHotel(Long id,MultipartFile file, String name, String address, String city, String description, BigDecimal price) throws IOException, SQLException {

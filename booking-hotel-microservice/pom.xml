@@ -21,6 +21,8 @@
 		<module>DiscoveryServer</module>
 		<module>ApiGateway</module>
         <module>HotelService</module>
+        <module>NotificationService</module>
+        <module>UserService</module>
     </modules>
 
 	<properties>
