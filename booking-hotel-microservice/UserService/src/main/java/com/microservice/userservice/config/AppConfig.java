@@ -37,15 +37,25 @@ public class AppConfig {
             @Override
             public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                 CorsConfiguration cfg = new CorsConfiguration();
-                cfg.setAllowedOrigins(Arrays.asList("*"));
+//                cfg.setAllowedOrigins(Arrays.asList("*"));
                 /*cfg.setAllowedOrigins(Arrays.asList(
                         "http://localhost:3000"
-                ));*/
+                ));
                 cfg.setAllowedMethods(Collections.singletonList("*"));
                 cfg.setAllowCredentials(true);
                 cfg.setAllowedHeaders(Collections.singletonList("*"));
                 cfg.setExposedHeaders(Arrays.asList("Authorization"));
+                cfg.setMaxAge(3600L);*/
+
+                cfg.setAllowCredentials(true);
+                cfg.addAllowedOrigin("http://127.0.0.1:5173");
                 cfg.setMaxAge(3600L);
+                cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+                cfg.addAllowedHeader("origin");
+                cfg.addAllowedHeader("content-type");
+                cfg.addAllowedHeader("accept");
+                cfg.addAllowedHeader("authorization");
+                cfg.addAllowedHeader("cookie");
                 return cfg;
             }
         };
