@@ -42,7 +42,7 @@ public class AuthController {
 
         User isEmailExits = userRepository.findByEmail(user.getEmail());
         if(isEmailExits != null){
-            throw new Exception("Email is already used with another account");
+            return new ResponseEntity<>(new AuthResponse(null, "Email đã tồn tại", null), HttpStatus.OK);
         }
         User createdUser = new User();
         createdUser.setEmail(user.getEmail());
@@ -70,20 +70,24 @@ public class AuthController {
         String username = req.getEmail();
         String password = req.getPassword();
 
-        Authentication authentication = authenticate(username, password);
+        try {
+            Authentication authentication = authenticate(username, password);
 
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-        String role = authorities.isEmpty()?null:authorities.iterator().next().getAuthority();
+            Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+            String role = authorities.isEmpty()?null:authorities.iterator().next().getAuthority();
 
-        String jwt = jwtProvider.getnerateToken(authentication);
+            String jwt = jwtProvider.getnerateToken(authentication);
 
-        AuthResponse authResponse = new AuthResponse();
-        authResponse.setJwt(jwt);
-        authResponse.setMessage("Login success");
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setJwt(jwt);
+            authResponse.setMessage("Login success");
 
-        authResponse.setRole(USER_ROLE.valueOf(role));
+            authResponse.setRole(USER_ROLE.valueOf(role));
 
-        return new ResponseEntity<>(authResponse, HttpStatus.OK);
+            return new ResponseEntity<>(authResponse, HttpStatus.OK);
+        }catch (BadCredentialsException e){
+            return new ResponseEntity<>(new AuthResponse(null, "Tài khoản hoặc mật khẩu không chính xác", null), HttpStatus.OK);
+        }
     }
 
     private Authentication authenticate(String username, String password) {
