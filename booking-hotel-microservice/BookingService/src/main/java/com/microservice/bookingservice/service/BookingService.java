@@ -6,7 +6,7 @@ import com.microservice.bookingservice.BookingCancelDateExeption;
 import com.microservice.bookingservice.BookingCancelStatusExeption;
 import com.microservice.bookingservice.BookingExeption;
 import com.microservice.bookingservice.dto.*;
-//import com.microservice.bookingservice.event.BookingPlaceEvent;//
+import com.microservice.bookingservice.event.BookingPlaceEvent;//
 import com.microservice.bookingservice.model.BookedRoom;
 import com.microservice.bookingservice.repository.BookingRepository;
 import io.micrometer.observation.Observation;
@@ -17,7 +17,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-//import org.springframework.kafka.core.KafkaTemplate;//
+import org.springframework.kafka.core.KafkaTemplate;//
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -37,7 +37,7 @@ public class BookingService {
     private final WebClient.Builder webClientBuilder;
     private final Tracer tracer;
     private final ObservationRegistry observationRegistry;
-//    private final KafkaTemplate<String, BookingPlaceEvent> kafkaTemplate;//
+    private final KafkaTemplate<String, BookingPlaceEvent> kafkaTemplate;//
 
     public String saveBooking(BookedRoom bookingRequest) {
         if(bookingRequest.getCheckOutDate().isBefore(bookingRequest.getCheckInDate())){
@@ -66,10 +66,10 @@ public class BookingService {
 
                         bookingRepository.save(bookingRequest);
 
-                    /*kafkaTemplate.send("notificationTopic",
+                    kafkaTemplate.send("notificationTopic",
                             new BookingPlaceEvent(bookingRequest.getBookingId(), bookingRequest.getGuestFullName(),
                                     bookingRequest.getGuestEmail(), bookingRequest.getCheckInDate(),
-                                    bookingRequest.getCheckOutDate(), bookingRequest.getBookingConfirmationCode()));//*/
+                                    bookingRequest.getCheckOutDate(), bookingRequest.getBookingConfirmationCode()));//
 
                         return "Room booked successfully, Your booking confirmation code is : " + bookingRequest.getBookingConfirmationCode();
                     }else {
